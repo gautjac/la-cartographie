@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#06080f" />
+    <meta
+      name="description"
+      content="La Cartographie du Goût — cartographie ton goût comme un ciel étoilé, puis découvre l'inconnu adjacent : la chose juste au-delà de ce que tu aimes déjà."
+    />
+    <title>La Cartographie du Goût — la carte de ce que tu aimes</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500;0,6..96,600;0,6..96,700;1,6..96,400;1,6..96,500&family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+    />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+    <script>
+      // Daily-app beacon (fire-and-forget; never breaks the app)
+      (function () {
+        try {
+          var APP_ID = "cartographie";
+          var KEY = "AIzaSyC2xUjWzIU35j_frmg6yI-JigW8ehKZVKQ";
+          var DOC =
+            "https://firestore.googleapis.com/v1/projects/charlotte-dashboard" +
+            "/databases/(default)/documents/daily_apps/" +
+            APP_ID;
+          var today = new Date().toISOString().slice(0, 10);
+          fetch(DOC + "?key=" + KEY, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            keepalive: true,
+            body: JSON.stringify({
+              fields: { lastOpened: { stringValue: today } },
+            }),
+          }).catch(function () {});
+        } catch (e) {}
+      })();
+    </script>
+  </body>
+</html>
