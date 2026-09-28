@@ -98,17 +98,29 @@ export default async (req: Request) => {
 
   return ndjson(async () => {
     const anthropic = client();
-    const payload = { domain, axes, items, avoid };
+    // The map (domain, axes, rated items) stays the same while the person
+    // dismisses a proposal and asks for another; only the avoid list grows.
+    // So the map ends on a cache breakpoint and the avoid list follows it.
+    const mapPayload = { domain, axes, items };
     const res = await anthropic.messages.create({
       model: MODEL,
       max_tokens: 1200,
-      system: system(lang),
+      // Tools + system are the same for every domain (only the language
+      // changes), so they carry their own breakpoint too.
+      system: [{ type: "text", text: system(lang), cache_control: { type: "ephemeral" } }],
       messages: [
         {
           role: "user",
-          content:
-            "Voici la carte de goût de la personne. Propose l'inconnu adjacent.\n" +
-            JSON.stringify(payload, null, 2),
+          content: [
+            {
+              type: "text",
+              text:
+                "Voici la carte de goût de la personne. Propose l'inconnu adjacent.\n" +
+                JSON.stringify(mapPayload, null, 2),
+              cache_control: { type: "ephemeral" },
+            },
+            { type: "text", text: JSON.stringify({ avoid }, null, 2) },
+          ],
         },
       ],
       tools: [tool],

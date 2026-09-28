@@ -95,24 +95,39 @@ export default async (req: Request) => {
 
   return ndjson(async () => {
     const anthropic = client();
-    const userPayload = {
+    // The domain and its axes are the same every time an item is placed in
+    // that domain, so they lead the turn and end on a cache breakpoint; the
+    // known items (one more each time) and the item to place follow it.
+    const mapPayload = {
       domain,
       existingAxes: existingAxes.length ? existingAxes : undefined,
+    };
+    const itemPayload = {
       knownItems: (body.known ?? []).map((k) => ({ name: k.name, coords: k.coords })),
       placeThisItem: target,
     };
     const res = await anthropic.messages.create({
       model: MODEL,
       max_tokens: 1400,
-      system: system(lang),
+      // Tools + system are the same for every domain (only the language
+      // changes), so they carry their own breakpoint too: a new domain's first
+      // item, or a placement in another domain, still reads them from cache.
+      system: [{ type: "text", text: system(lang), cache_control: { type: "ephemeral" } }],
       messages: [
         {
           role: "user",
-          content:
-            (existingAxes.length
-              ? "Réutilise EXACTEMENT ces axes et place le nouvel objet dessus.\n"
-              : "Définis les axes de ce domaine, puis place l'objet.\n") +
-            JSON.stringify(userPayload, null, 2),
+          content: [
+            {
+              type: "text",
+              text:
+                (existingAxes.length
+                  ? "Réutilise EXACTEMENT ces axes et place le nouvel objet dessus.\n"
+                  : "Définis les axes de ce domaine, puis place l'objet.\n") +
+                JSON.stringify(mapPayload, null, 2),
+              cache_control: { type: "ephemeral" },
+            },
+            { type: "text", text: JSON.stringify(itemPayload, null, 2) },
+          ],
         },
       ],
       tools: [tool],

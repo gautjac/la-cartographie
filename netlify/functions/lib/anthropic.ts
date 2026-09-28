@@ -57,6 +57,10 @@ export function toolInput(
   res: Anthropic.Messages.Message,
 ): Record<string, unknown> {
   const block = res.content.find((b) => b.type === "tool_use");
+  const u = res.usage;
+  console.log(
+    `[la-cartographie] ${block?.type === "tool_use" ? block.name : "no tool"}: input=${u.input_tokens} cache_read=${u.cache_read_input_tokens ?? 0} cache_write=${u.cache_creation_input_tokens ?? 0} output=${u.output_tokens}`,
+  );
   if (!block || block.type !== "tool_use") {
     throw new Error("Model did not return a tool call");
   }
